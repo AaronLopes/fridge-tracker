@@ -1,6 +1,4 @@
 import gspread
-import matplotlib
-import matplotlib.pyplot as pl
 import numpy as np
 import pprint
 
