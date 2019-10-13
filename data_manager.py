@@ -30,7 +30,7 @@ sheet.delete()
 def get_date_T(date):
     datetimes = [[], [], [], [], [], []]
     values = [[], [], [], [], [], []]
-    working_channels = []
+    missing_channels = []
     for i in range(6):
         try:
             data = np.loadtxt('./logs/' + date + '/CH' + str(i+1)
@@ -45,29 +45,24 @@ def get_date_T(date):
                 second = int(data[j][1][6:8])
                 datetimes[i] += [datetime(year, month, day, hour, minute, second)]
                 values[i] += [data[j][2]]
-            working_channels += [i]
         except Exception as e:
             print('Error: ' + str(e))
             print('No data for channel ' + str(i + 1) + ' on ' + date)
-    return datetimes, values, working_channels
+            missing_channels += [i]
+    return datetimes, values, missing_channels
 
 
-def merge_datetimes_temp(datetimes, values, working_ch):
+def merge_datetimes_temp(datetimes, values, missing_ch):
     date_val_ch = [[], [], [], [], [], []]
-    missing_ch = []
     flat_datetimes = list(set(itertools.chain(*datetimes)))
 
     # num channels
     for i in range(6):
-        if i in working_ch:
+        if i not in missing_ch:
             print('T CH ' + str(i + 1))
             date_val = np.array([datetimes[i], values[i]])
             date_val = date_val.transpose()
-            #pprint.pprint(date_val)
             date_val_ch[i] = date_val
-        else:
-            print('No data found for CH ' + str(i + 1))
-            missing_ch.append(i)
 
     print(len(date_val_ch), len(date_val_ch[0]), len(date_val_ch[0][0]))
     print(date_val_ch[0][0])
@@ -81,16 +76,16 @@ def merge_datetimes_temp(datetimes, values, working_ch):
     } 
     """
     upload_struct = dict((i, []) for i in flat_datetimes)
-    # pprint.pprint(upload_struct)
-
     for i in range(len(date_val_ch)):
-        if len(date_val_ch[i]) == 0:
-            print('skipping CH ' + str(i + 1) + ', no available data')
+        if i in missing_ch:
+            print('adding placeholders for missing CH' + str(i + 1))
+            for k in upload_struct.keys():
+                upload_struct[k] += ['N/A']
         else:
-            print('accessing CH ' + str(i + 1))
+            print('accessing CH' + str(i + 1))
             for j in range(len(date_val_ch[i])):
                 upload_struct[date_val_ch[i][j][0]] += [date_val_ch[i][j][1]]
-    pprint.pprint(upload_struct)
+    return upload_struct
 
 
 if __name__ == '__main__':
@@ -99,8 +94,8 @@ if __name__ == '__main__':
     date = '17-02-28'
     datetimes = [[], [], [], [], [], []]
     values = [[], [], [], [], [], []]
-    datetimes_temp, values_temp, working_channels = get_date_T(date)
-    if len(working_channels) is not 0:
+    datetimes_temp, values_temp, missing_channels = get_date_T(date)
+    if len(missing_channels) is not 6:
         for i in range(6):
             datetimes[i] += datetimes_temp[i]
             values[i] += values_temp[i]
@@ -110,4 +105,4 @@ if __name__ == '__main__':
             if float(values[i][j]) == 0.0 and float(values[i][j - 1]) != 0.0:
                 values[i][j] = values[i][j - 1]
 
-    merge_datetimes_temp(datetimes, values, working_channels)
+    merge_datetimes_temp(datetimes, values, missing_channels)
