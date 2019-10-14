@@ -15,7 +15,7 @@ scope = ['https://spreadsheets.google.com/feeds',
 creds = ServiceAccountCredentials.from_json_keyfile_name('creds.json', scope)
 client = gspread.authorize(creds)
 
-sheet = client.open('Fridge Data')
+sheet = client.open('Fridge Data').sheet1
 
 """
 GSPREAD API REF
@@ -54,19 +54,18 @@ def get_date_T(date):
 
 def merge_datetimes_temp(datetimes, values, missing_ch):
     date_val_ch = [[], [], [], [], [], []]
-    flat_datetimes = list(set(itertools.chain(*datetimes)))
 
-    # num channels
+    # flatten needs to be fixed, datetimes not ordered
+    flat_datetimes = sorted(list(set(itertools.chain(*datetimes))))
+
     for i in range(6):
         if i not in missing_ch:
-            print('T CH ' + str(i + 1))
             date_val = np.array([datetimes[i], values[i]])
             date_val = date_val.transpose()
             date_val_ch[i] = date_val
 
+    print('dimensions: ')
     print(len(date_val_ch), len(date_val_ch[0]), len(date_val_ch[0][0]))
-    print(date_val_ch[0][0])
-
     """
     upload_struct = {
         datetime.datetime(0,0,0,0,0,0) = [CH1 T, CH2 T, ..., CH6 T]
@@ -88,6 +87,17 @@ def merge_datetimes_temp(datetimes, values, missing_ch):
     return upload_struct
 
 
+def upload_protocol(ustruct):
+    print('uploading...')
+    for key, val in ustruct.items():
+        date = key.strftime('%m/%d/%y')
+        time = key.strftime('%H:%M:%S')
+        data = [date, time]
+        data = data + val
+        sheet.insert_row(data, 2)
+    print('upload complete')
+
+
 if __name__ == '__main__':
     # get current date
     # datetime.now().strftime('%y-%m-%d'), date for testing
@@ -105,4 +115,6 @@ if __name__ == '__main__':
             if float(values[i][j]) == 0.0 and float(values[i][j - 1]) != 0.0:
                 values[i][j] = values[i][j - 1]
 
-    merge_datetimes_temp(datetimes, values, missing_channels)
+    to_upload = merge_datetimes_temp(datetimes, values, missing_channels)
+    upload_protocol(to_upload)
+
