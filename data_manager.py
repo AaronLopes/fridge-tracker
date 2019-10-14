@@ -1,22 +1,10 @@
 import gspread
 import itertools
 import numpy as np
-import pprint
 import time
 
 from datetime import datetime
 from oauth2client.service_account import ServiceAccountCredentials
-
-
-scope = ['https://spreadsheets.google.com/feeds',
-         'https://www.googleapis.com/auth/spreadsheets',
-         'https://www.googleapis.com/auth/drive.file',
-         'https://www.googleapis.com/auth/drive']
-
-creds = ServiceAccountCredentials.from_json_keyfile_name('creds.json', scope)
-client = gspread.authorize(creds)
-
-sheet = client.open('Fridge Data').sheet1
 
 """
 GSPREAD API REF
@@ -27,6 +15,7 @@ pushes current content down
 sheet.delete()
 
 """
+
 
 def get_date_T(date):
     datetimes = [[], [], [], [], [], []]
@@ -88,7 +77,7 @@ def merge_datetimes_temp(datetimes, values, missing_ch):
     return upload_struct
 
 
-def upload_protocol(ustruct):
+def upload_protocol(ustruct, spreadsheet):
     print('uploading...')
     for key, val in ustruct.items():
         time.sleep(2)
@@ -96,21 +85,34 @@ def upload_protocol(ustruct):
         t = key.strftime('%H:%M:%S')
         data = [d, t]
         data = data + val
-        sheet.insert_row(data, 2)
+        spreadsheet.insert_row(data, 2)
     print('upload complete')
 
 
 if __name__ == '__main__':
+    scope = ['https://spreadsheets.google.com/feeds',
+             'https://www.googleapis.com/auth/spreadsheets',
+             'https://www.googleapis.com/auth/drive.file',
+             'https://www.googleapis.com/auth/drive']
+
+    creds = ServiceAccountCredentials.from_json_keyfile_name('creds.json', scope)
+    client = gspread.authorize(creds)
+
+    sheet = client.open('Fridge Data').sheet1
+
     # get current date
     # datetime.now().strftime('%y-%m-%d'), date for testing
     date = '17-02-28'
     datetimes = [[], [], [], [], [], []]
     values = [[], [], [], [], [], []]
+
     datetimes_temp, values_temp, missing_channels = get_date_T(date)
+
     if len(missing_channels) is not 6:
         for i in range(6):
             datetimes[i] += datetimes_temp[i]
             values[i] += values_temp[i]
+
     # fill in 0s in data
     for i in range(6):
         for j in range(1, len(values[i])):
@@ -118,5 +120,5 @@ if __name__ == '__main__':
                 values[i][j] = values[i][j - 1]
 
     to_upload = merge_datetimes_temp(datetimes, values, missing_channels)
-    upload_protocol(to_upload)
+    upload_protocol(to_upload, sheet)
 
