@@ -2,6 +2,7 @@ import gspread
 import itertools
 import numpy as np
 import pprint
+import time
 
 from datetime import datetime
 from oauth2client.service_account import ServiceAccountCredentials
@@ -90,9 +91,10 @@ def merge_datetimes_temp(datetimes, values, missing_ch):
 def upload_protocol(ustruct):
     print('uploading...')
     for key, val in ustruct.items():
-        date = key.strftime('%m/%d/%y')
-        time = key.strftime('%H:%M:%S')
-        data = [date, time]
+        time.sleep(2)
+        d = key.strftime('%m/%d/%y')
+        t = key.strftime('%H:%M:%S')
+        data = [d, t]
         data = data + val
         sheet.insert_row(data, 2)
     print('upload complete')
