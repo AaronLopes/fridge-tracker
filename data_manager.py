@@ -1,20 +1,21 @@
 import gspread
 import itertools
 import numpy as np
+import schedule
 import time
 
 from datetime import datetime
 from oauth2client.service_account import ServiceAccountCredentials
 
-"""
-GSPREAD API REF
+scope = ['https://spreadsheets.google.com/feeds',
+         'https://www.googleapis.com/auth/spreadsheets',
+         'https://www.googleapis.com/auth/drive.file',
+         'https://www.googleapis.com/auth/drive']
 
-spreadsheet data type string 
-sheet.insert_row(values, index=1, value_input_option='RAW'),
-pushes current content down 
-sheet.delete()
+creds = ServiceAccountCredentials.from_json_keyfile_name('creds.json', scope)
+client = gspread.authorize(creds)
 
-"""
+sheet = client.open('Fridge Data').sheet1
 
 
 def get_date_T(date):
@@ -43,9 +44,8 @@ def get_date_T(date):
 
 
 def merge_datetimes_temp(datetimes, values, missing_ch):
-    date_val_ch = [[], [], [], [], [], []]
 
-    # flatten needs to be fixed, datetimes not ordered
+    date_val_ch = [[], [], [], [], [], []]
     flat_datetimes = sorted(list(set(itertools.chain(*datetimes))))
 
     for i in range(6):
@@ -80,7 +80,7 @@ def merge_datetimes_temp(datetimes, values, missing_ch):
 def upload_protocol(ustruct, spreadsheet):
     print('uploading...')
     for key, val in ustruct.items():
-        time.sleep(2)
+        time.sleep(10)
         d = key.strftime('%m/%d/%y')
         t = key.strftime('%H:%M:%S')
         data = [d, t]
@@ -89,18 +89,7 @@ def upload_protocol(ustruct, spreadsheet):
     print('upload complete')
 
 
-if __name__ == '__main__':
-    scope = ['https://spreadsheets.google.com/feeds',
-             'https://www.googleapis.com/auth/spreadsheets',
-             'https://www.googleapis.com/auth/drive.file',
-             'https://www.googleapis.com/auth/drive']
-
-    creds = ServiceAccountCredentials.from_json_keyfile_name('creds.json', scope)
-    client = gspread.authorize(creds)
-
-    sheet = client.open('Fridge Data').sheet1
-
-    # get current date
+def main():
     # datetime.now().strftime('%y-%m-%d'), date for testing
     date = '17-02-28'
     datetimes = [[], [], [], [], [], []]
@@ -121,4 +110,11 @@ if __name__ == '__main__':
 
     to_upload = merge_datetimes_temp(datetimes, values, missing_channels)
     upload_protocol(to_upload, sheet)
+
+
+schedule.every(1).minutes.do(main)
+while True:
+    schedule.run_pending()
+    time.sleep(1)
+
 
