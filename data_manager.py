@@ -18,7 +18,14 @@ client = gspread.authorize(creds)
 sheet = client.open('Fridge Data').sheet1
 
 
-def get_date_T(date):
+def get_date_T(date, type, ustruct):
+    """
+    :param date: date in format 'yy-mm-dd' corresponding to log folders
+    :param type: the file type of values to be parsed (T, K, P, etc.)
+    :param ustruct: the file type of values to be parsed (T, K, P, etc.)
+    :return: datetime objects corresponding to values parsed, values, and missing channels
+    :rtype: lists
+    """
     datetimes = [[], [], [], [], [], []]
     values = [[], [], [], [], [], []]
     missing_channels = []
@@ -35,7 +42,8 @@ def get_date_T(date):
                 minute = int(data[j][1][3:5])
                 second = int(data[j][1][6:8])
                 datetimes[i] += [datetime(year, month, day, hour, minute, second)]
-                values[i] += [data[j][2]]
+                if datetimes[i] not in ustruct:
+                    values[i] += [data[j][2]]
         except Exception as e:
             print('Error: ' + str(e))
             print('No data for channel ' + str(i + 1) + ' on ' + date)
@@ -78,6 +86,12 @@ def merge_datetimes_temp(datetimes, values, missing_ch):
 
 
 def upload_protocol(ustruct, spreadsheet):
+    """
+
+    :param ustruct: dictionary of properly formatted values and datetimes
+    :param spreadsheet: sheet object corresponding to ustruct data (T, K, P, etc.)
+    :return: boolean
+    """
     print('uploading...')
     for key, val in ustruct.items():
         time.sleep(10)
@@ -85,8 +99,13 @@ def upload_protocol(ustruct, spreadsheet):
         t = key.strftime('%H:%M:%S')
         data = [d, t]
         data = data + val
-        spreadsheet.insert_row(data, 2)
+        try:
+            spreadsheet.insert_row(data, 2)
+        except gspread.exceptions as e:
+            print('Error: ' + str(e))
+            return False
     print('upload complete')
+    return True
 
 
 def main():
@@ -94,8 +113,9 @@ def main():
     date = '17-02-28'
     datetimes = [[], [], [], [], [], []]
     values = [[], [], [], [], [], []]
+    to_upload = dict()
 
-    datetimes_temp, values_temp, missing_channels = get_date_T(date)
+    datetimes_temp, values_temp, missing_channels = get_date_T(date, 'T', to_upload)
 
     if len(missing_channels) is not 6:
         for i in range(6):
