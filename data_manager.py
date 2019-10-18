@@ -4,7 +4,7 @@ import numpy as np
 import schedule
 import time
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from oauth2client.service_account import ServiceAccountCredentials
 
 scope = ['https://spreadsheets.google.com/feeds',
@@ -15,13 +15,14 @@ scope = ['https://spreadsheets.google.com/feeds',
 creds = ServiceAccountCredentials.from_json_keyfile_name('creds.json', scope)
 client = gspread.authorize(creds)
 
-sheet = client.open('Fridge Data').sheet1
+temperature_sheet = client.open('Fridge Data').sheet1
+num_uploads = 0
 
 
-def get_date_T(date, type, ustruct):
+def get_date_T(date, type):
     """
     :param date: date in format 'yy-mm-dd' corresponding to log folders
-    :param type: the file type of values to be parsed (T, K, P, etc.)
+    :param type: the file type of values to be parsed (T, K, P, etc.), should be in format ' X '
     :param ustruct: the file type of values to be parsed (T, K, P, etc.)
     :return: datetime objects corresponding to values parsed, values, and missing channels
     :rtype: lists
@@ -29,30 +30,37 @@ def get_date_T(date, type, ustruct):
     datetimes = [[], [], [], [], [], []]
     values = [[], [], [], [], [], []]
     missing_channels = []
+    global num_uploads
+
+    print('gathering data for upload number ' + str(num_uploads))
     for i in range(6):
         try:
-            data = np.loadtxt('./logs/' + date + '/CH' + str(i+1)
-                              + ' T ' + date + '.log', dtype=str, delimiter=',')
+            data = np.loadtxt('./logs/' + date + '/CH' + str(i + 1)
+                              + type + date + '.log', dtype=str, delimiter=',')
             n = len(data)
             for j in range(n):
-                year = int(data[j][0][7:9])
+                year = int(data[j][0][7:9]) + 2000
                 month = int(data[j][0][4:6])
                 day = int(data[j][0][1:3])
                 hour = int(data[j][1][0:2])
                 minute = int(data[j][1][3:5])
                 second = int(data[j][1][6:8])
                 datetimes[i] += [datetime(year, month, day, hour, minute, second)]
-                if datetimes[i] not in ustruct:
+                if num_uploads == 0:
                     values[i] += [data[j][2]]
+                elif num_uploads > 0 and datetimes[i][j] >= (datetime.now() - timedelta(minutes=10)):
+                    values[i] += [data[j][2]]
+                else:
+                    pass
         except Exception as e:
             print('Error: ' + str(e))
             print('No data for channel ' + str(i + 1) + ' on ' + date)
             missing_channels += [i]
+    num_uploads += 1
     return datetimes, values, missing_channels
 
 
 def merge_datetimes_temp(datetimes, values, missing_ch):
-
     date_val_ch = [[], [], [], [], [], []]
     flat_datetimes = sorted(list(set(itertools.chain(*datetimes))))
 
@@ -85,22 +93,24 @@ def merge_datetimes_temp(datetimes, values, missing_ch):
     return upload_struct
 
 
-def upload_protocol(ustruct, spreadsheet):
+def upload_protocol(ustruct):
     """
 
     :param ustruct: dictionary of properly formatted values and datetimes
     :param spreadsheet: sheet object corresponding to ustruct data (T, K, P, etc.)
     :return: boolean
     """
+    global temperature_sheet
+
     print('uploading...')
     for key, val in ustruct.items():
-        time.sleep(10)
+        time.sleep(2)
         d = key.strftime('%m/%d/%y')
         t = key.strftime('%H:%M:%S')
         data = [d, t]
         data = data + val
         try:
-            spreadsheet.insert_row(data, 2)
+            temperature_sheet.insert_row(data, 2)
         except gspread.exceptions as e:
             print('Error: ' + str(e))
             return False
@@ -115,7 +125,7 @@ def main():
     values = [[], [], [], [], [], []]
     to_upload = dict()
 
-    datetimes_temp, values_temp, missing_channels = get_date_T(date, 'T', to_upload)
+    datetimes_temp, values_temp, missing_channels = get_date_T(date, ' T ')
 
     if len(missing_channels) is not 6:
         for i in range(6):
@@ -129,12 +139,13 @@ def main():
                 values[i][j] = values[i][j - 1]
 
     to_upload = merge_datetimes_temp(datetimes, values, missing_channels)
-    upload_protocol(to_upload, sheet)
+    upload_protocol(to_upload)
 
 
-schedule.every(1).minutes.do(main)
+main()
+
+# comment out scheduling block for testing
+schedule.every(10).minutes.do(main)
 while True:
     schedule.run_pending()
     time.sleep(1)
-
-
