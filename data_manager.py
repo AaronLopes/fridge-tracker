@@ -7,15 +7,6 @@ import time
 from datetime import datetime, timedelta
 from oauth2client.service_account import ServiceAccountCredentials
 
-scope = ['https://spreadsheets.google.com/feeds',
-         'https://www.googleapis.com/auth/spreadsheets',
-         'https://www.googleapis.com/auth/drive.file',
-         'https://www.googleapis.com/auth/drive']
-
-creds = ServiceAccountCredentials.from_json_keyfile_name('creds.json', scope)
-client = gspread.authorize(creds)
-
-temperature_sheet = client.open('Fridge Data').sheet1
 num_uploads = 0
 
 
@@ -45,13 +36,11 @@ def get_date_T(date, type):
                 hour = int(data[j][1][0:2])
                 minute = int(data[j][1][3:5])
                 second = int(data[j][1][6:8])
-                datetimes[i] += [datetime(year, month, day, hour, minute, second)]
-                if num_uploads == 0:
+                dt = datetime(year, month, day, hour, minute, second)
+                interval = datetime.now() - timedelta(minutes=10)
+                if dt >= interval:
+                    datetimes[i] += [dt]
                     values[i] += [data[j][2]]
-                elif num_uploads > 0 and datetimes[i][j] >= (datetime.now() - timedelta(minutes=10)):
-                    values[i] += [data[j][2]]
-                else:
-                    pass
         except Exception as e:
             print('Error: ' + str(e))
             print('No data for channel ' + str(i + 1) + ' on ' + date)
@@ -64,6 +53,15 @@ def merge_datetimes_temp(datetimes, values, missing_ch):
     date_val_ch = [[], [], [], [], [], []]
     flat_datetimes = sorted(list(set(itertools.chain(*datetimes))))
 
+    """
+        upload_struct = {
+            datetime.datetime(0,0,0,0,0,0) = [CH1 T, CH2 T, ..., CH6 T]
+            .
+            .
+            datetime.datetime(0,0,0,0,0,0) = [CH1 T, CH2 T, ..., CH6 T]
+        } 
+    """
+
     for i in range(6):
         if i not in missing_ch:
             date_val = np.array([datetimes[i], values[i]])
@@ -71,15 +69,11 @@ def merge_datetimes_temp(datetimes, values, missing_ch):
             date_val_ch[i] = date_val
 
     print('dimensions: ')
-    print(len(date_val_ch), len(date_val_ch[0]), len(date_val_ch[0][0]))
-    """
-    upload_struct = {
-        datetime.datetime(0,0,0,0,0,0) = [CH1 T, CH2 T, ..., CH6 T]
-        .
-        .
-        datetime.datetime(0,0,0,0,0,0) = [CH1 T, CH2 T, ..., CH6 T]
-    } 
-    """
+    if len(date_val_ch) != 0:
+        print(len(date_val_ch), len(date_val_ch[0]), len(date_val_ch[0][0]))
+    else:
+        print('no available data')
+
     upload_struct = dict((i, []) for i in flat_datetimes)
     for i in range(len(date_val_ch)):
         if i in missing_ch:
@@ -100,7 +94,16 @@ def upload_protocol(ustruct):
     :param spreadsheet: sheet object corresponding to ustruct data (T, K, P, etc.)
     :return: boolean
     """
-    global temperature_sheet
+    scope = ['https://spreadsheets.google.com/feeds',
+             'https://www.googleapis.com/auth/spreadsheets',
+             'https://www.googleapis.com/auth/drive.file',
+             'https://www.googleapis.com/auth/drive']
+
+    creds = ServiceAccountCredentials.from_json_keyfile_name('creds.json', scope)
+    client = gspread.authorize(creds)
+    temperature_sheet = client.open('Fridge Data').get_worksheet(0)
+    # pressure_sheet = client.open('Fridge Data').get_worksheet(1)
+    # resistance_sheet = client.open('Fridge Data').get_worksheet(2)
 
     print('uploading...')
     for key, val in ustruct.items():
@@ -138,7 +141,9 @@ def main():
             if float(values[i][j]) == 0.0 and float(values[i][j - 1]) != 0.0:
                 values[i][j] = values[i][j - 1]
 
+    print(datetimes, values)
     to_upload = merge_datetimes_temp(datetimes, values, missing_channels)
+    print(to_upload)
     upload_protocol(to_upload)
 
 
