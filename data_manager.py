@@ -10,11 +10,13 @@ from oauth2client.service_account import ServiceAccountCredentials
 num_uploads = 0
 
 
-def get_date_T(date, type):
+def parse_file(date, type, interval):
     """
+    Parses values over given interval. Creates datetime array, values array, and identifies
+    channels missing data.   
     :param date: date in format 'yy-mm-dd' corresponding to log folders
     :param type: the file type of values to be parsed (T, K, P, etc.), should be in format ' X '
-    :param ustruct: the file type of values to be parsed (T, K, P, etc.)
+    :param interval:
     :return: datetime objects corresponding to values parsed, values, and missing channels
     :rtype: lists
     """
@@ -37,7 +39,7 @@ def get_date_T(date, type):
                 minute = int(data[j][1][3:5])
                 second = int(data[j][1][6:8])
                 dt = datetime(year, month, day, hour, minute, second)
-                interval = datetime.now() - timedelta(minutes=10)
+                interval = datetime.now() - timedelta(minutes=interval)
                 if dt >= interval:
                     datetimes[i] += [dt]
                     values[i] += [data[j][2]]
@@ -49,10 +51,24 @@ def get_date_T(date, type):
     return datetimes, values, missing_channels
 
 
-def merge_datetimes_temp(datetimes, values, missing_ch):
+def restruct_data(datetimes, values, missing_ch):
     date_val_ch = [[], [], [], [], [], []]
-    flat_datetimes = sorted(list(set(itertools.chain(*datetimes))))
 
+    dts = [[], [], [], [], [], []]
+    vls = [[], [], [], [], [], []]
+
+    if len(missing_ch) is not 6:
+        for i in range(6):
+            dts[i] += datetimes[i]
+            vls[i] += values[i]
+
+    # reformat data, fills in 0 gaps in data
+    for i in range(6):
+        for j in range(1, len(values[i])):
+            if float(values[i][j]) == 0.0 and float(values[i][j - 1]) != 0.0:
+                vls[i][j] = values[i][j - 1]
+
+    flat_datetimes = sorted(list(set(itertools.chain(*datetimes))))
     """
         upload_struct = {
             datetime.datetime(0,0,0,0,0,0) = [CH1 T, CH2 T, ..., CH6 T]
@@ -87,11 +103,12 @@ def merge_datetimes_temp(datetimes, values, missing_ch):
     return upload_struct
 
 
-def upload_protocol(ustruct):
+def upload_protocol(ustruct, sheet_no):
     """
-
+    Given the proper upload data structure and sheet number, parses through values
+    and uploads them to corresponding Google Sheets. Visit https://tinyurl.com/y6ppy543 to view.
     :param ustruct: dictionary of properly formatted values and datetimes
-    :param spreadsheet: sheet object corresponding to ustruct data (T, K, P, etc.)
+    :param sheet_no: sheet object corresponding to ustruct data (T, K, P, etc.)
     :return: boolean
     """
     scope = ['https://spreadsheets.google.com/feeds',
@@ -101,7 +118,8 @@ def upload_protocol(ustruct):
 
     creds = ServiceAccountCredentials.from_json_keyfile_name('creds.json', scope)
     client = gspread.authorize(creds)
-    temperature_sheet = client.open('Fridge Data').get_worksheet(0)
+    sheet = client.open('Fridge Data').get_worksheet(sheet_no)
+
     # pressure_sheet = client.open('Fridge Data').get_worksheet(1)
     # resistance_sheet = client.open('Fridge Data').get_worksheet(2)
 
@@ -113,7 +131,7 @@ def upload_protocol(ustruct):
         data = [d, t]
         data = data + val
         try:
-            temperature_sheet.insert_row(data, 2)
+            sheet.insert_row(data, 2)
         except gspread.exceptions as e:
             print('Error: ' + str(e))
             return False
@@ -123,28 +141,19 @@ def upload_protocol(ustruct):
 
 def main():
     # datetime.now().strftime('%y-%m-%d'), date for testing
-    date = '17-02-28'
-    datetimes = [[], [], [], [], [], []]
-    values = [[], [], [], [], [], []]
-    to_upload = dict()
+    date = datetime.now().strftime('%y-%m-%d')
 
-    datetimes_temp, values_temp, missing_channels = get_date_T(date, ' T ')
+    temp_datetimes, temp_values, temp_missing_ch = parse_file(date, ' T ', 10)
+    pres_datetimes, pres_values, pres_missing_ch = parse_file(date, ' P ', 10)
 
-    if len(missing_channels) is not 6:
-        for i in range(6):
-            datetimes[i] += datetimes_temp[i]
-            values[i] += values_temp[i]
+    temp_struct = restruct_data(temp_datetimes, temp_values, temp_missing_ch)
+    pres_struct = restruct_data(pres_datetimes, pres_values, pres_missing_ch)
 
-    # fill in 0s in data
-    for i in range(6):
-        for j in range(1, len(values[i])):
-            if float(values[i][j]) == 0.0 and float(values[i][j - 1]) != 0.0:
-                values[i][j] = values[i][j - 1]
-
-    print(datetimes, values)
-    to_upload = merge_datetimes_temp(datetimes, values, missing_channels)
-    print(to_upload)
-    upload_protocol(to_upload)
+    # temporary, multithreading must be implemented for simultaneous uploading
+    if not upload_protocol(temp_struct, 0):
+        print('error uploading temperature values')
+    if not upload_protocol(pres_struct, 1):
+        print('error uploading pressure values')
 
 
 main()
