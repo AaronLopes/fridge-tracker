@@ -2,6 +2,7 @@ import gspread
 import itertools
 import numpy as np
 import schedule
+import threading
 import time
 
 from datetime import datetime, timedelta
@@ -9,11 +10,19 @@ from oauth2client.service_account import ServiceAccountCredentials
 
 num_uploads = 0
 
+scope = ['https://spreadsheets.google.com/feeds',
+             'https://www.googleapis.com/auth/spreadsheets',
+             'https://www.googleapis.com/auth/drive.file',
+             'https://www.googleapis.com/auth/drive']
+
+creds = ServiceAccountCredentials.from_json_keyfile_name('creds.json', scope)
+client = gspread.authorize(creds)
+
 
 def parse_file(date, type, interval):
     """
     Parses values over given interval. Creates datetime array, values array, and identifies
-    channels missing data.   
+    channels missing data.
     :param date: date in format 'yy-mm-dd' corresponding to log folders
     :param type: the file type of values to be parsed (T, K, P, etc.), should be in format ' X '
     :param interval:
@@ -103,28 +112,24 @@ def restruct_data(datetimes, values, missing_ch):
     return upload_struct
 
 
-def upload_protocol(ustruct, sheet_no):
+def upload_protocol(sheet_no, date, type):
     """
-    Given the proper upload data structure and sheet number, parses through values
-    and uploads them to corresponding Google Sheets. Visit https://tinyurl.com/y6ppy543 to view.
-    :param ustruct: dictionary of properly formatted values and datetimes
-    :param sheet_no: sheet object corresponding to ustruct data (T, K, P, etc.)
+
+    :param sheet_no: sheet object corresponding to ustruct data (T, P, R, etc.)
+    :param date: the current date to parse data
+    :param type: the data type to parse (i.e. T = temperature, etc.)
     :return: boolean
     """
-    scope = ['https://spreadsheets.google.com/feeds',
-             'https://www.googleapis.com/auth/spreadsheets',
-             'https://www.googleapis.com/auth/drive.file',
-             'https://www.googleapis.com/auth/drive']
 
-    creds = ServiceAccountCredentials.from_json_keyfile_name('creds.json', scope)
-    client = gspread.authorize(creds)
-    sheet = client.open('Fridge Data').get_worksheet(sheet_no)
+    type_datetimes, type_values, type_missing_ch = parse_file(date, type)
+    type_struct = restruct_data(type_datetimes, type_values, type_missing_ch)
+    sheet = client.open('Fridge Data Testing').get_worksheet(sheet_no)
 
     # pressure_sheet = client.open('Fridge Data').get_worksheet(1)
     # resistance_sheet = client.open('Fridge Data').get_worksheet(2)
 
     print('uploading...')
-    for key, val in ustruct.items():
+    for key, val in type_struct.items():
         time.sleep(2)
         d = key.strftime('%m/%d/%y')
         t = key.strftime('%H:%M:%S')
@@ -140,26 +145,29 @@ def upload_protocol(ustruct, sheet_no):
 
 
 def main():
-    # datetime.now().strftime('%y-%m-%d'), date for testing
+    # datetime.now().strftime('%y-%m-%d'), date = '17-02-28' for testing
     date = datetime.now().strftime('%y-%m-%d')
+    # type param should be of format ' X '
+    upload_threads = []
+    types = [' T ', ' P ', ' R ']
+    num_processes = len(types)
+    # add thread processes to thread list
+    for i in range(num_processes):
+        upload_threads += [threading.Thread(target=upload_protocol, args=(i, date, types[i], ))]
+    # start threads
+    for i in range(len(upload_threads)):
+        upload_threads[i].start()
 
-    temp_datetimes, temp_values, temp_missing_ch = parse_file(date, ' T ', 10)
-    pres_datetimes, pres_values, pres_missing_ch = parse_file(date, ' P ', 10)
-
-    temp_struct = restruct_data(temp_datetimes, temp_values, temp_missing_ch)
-    pres_struct = restruct_data(pres_datetimes, pres_values, pres_missing_ch)
-
-    # temporary, multithreading must be implemented for simultaneous uploading
-    if not upload_protocol(temp_struct, 0):
-        print('error uploading temperature values')
-    if not upload_protocol(pres_struct, 1):
-        print('error uploading pressure values')
+    # join threads
+    for i in range(len(upload_threads)):
+        upload_threads[i].join()
 
 
 main()
 
 # comment out scheduling block for testing
 schedule.every(10).minutes.do(main)
+schedule.every(30).minutes.do(gspread.authorize(creds))
 while True:
     schedule.run_pending()
     time.sleep(1)
