@@ -1,3 +1,7 @@
 creds.json
 .idea
 testing.py
+data_manager_alias.py
+logs
+logs-RT
+Installation-package
