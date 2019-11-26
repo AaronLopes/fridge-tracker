@@ -8,3 +8,4 @@ testing.py
 logs
 logs-RT
 oxford_logs
+__pycache__
