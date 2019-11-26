@@ -1,7 +1,10 @@
+beta
+blue_fors_logs
 creds.json
+data_manager_alias.py
+data_manager.py
 .idea
 testing.py
-data_manager_alias.py
 logs
 logs-RT
-Installation-package
+oxford_logs

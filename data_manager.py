@@ -18,7 +18,7 @@ scope = ['https://spreadsheets.google.com/feeds',
 creds = ServiceAccountCredentials.from_json_keyfile_name('creds.json', scope)
 
 
-def parse_file(date, data_type, num_channels):
+def parse_temp(date, data_type, num_channels):
     """
     Parses values over given interval. Creates datetime array, values array, and identifies
     channels missing data.
@@ -46,7 +46,8 @@ def parse_file(date, data_type, num_channels):
                 minute = int(data[j][1][3:5])
                 second = int(data[j][1][6:8])
                 dt = datetime(year, month, day, hour, minute, second)
-                interval = datetime.now() - timedelta(minutes=10)
+                #interval = datetime.now() - timedelta(minutes=10)
+                interval = datetime(17, 2, 28, 23, 49, 22)
                 if dt >= interval:
                     datetimes[i] += [dt]
                     values[i] += [data[j][2]]
@@ -157,10 +158,14 @@ def upload_protocol(sheet_no, date, data_type):
     :return: boolean
     """
     client = gspread.authorize(creds)
-    type_datetimes, type_values, type_missing_ch = parse_file(date, data_type)
-    type_struct = restructure_data(type_datetimes, type_values, type_missing_ch)
     sheet = client.open('Fridge Data Testing').get_worksheet(sheet_no)
+    
+    if(data_type == ' T '):
+        type_datetimes, type_values, type_missing_ch = parse_temp(date, data_type)    
+    if(data_type == ' P '):
+        type_datetimes, type_values, type_missing_ch = parse_maxigauge(date, data_type)    
 
+    type_struct = restructure_data(type_datetimes, type_values, type_missing_ch) 
     # pressure_sheet = client.open('Fridge Data').get_worksheet(1)
     # resistance_sheet = client.open('Fridge Data').get_worksheet(2)
 
@@ -186,9 +191,10 @@ def main():
     date = datetime.now().strftime('%y-%m-%d')
     # type param should be of format ' X '
     upload_threads = []
-    types = [' T ', ' P ', ' R ']
+    types = [' T ', ' P ']
     num_processes = len(types)
     # add thread processes to thread list
+
     for i in range(num_processes):
         upload_threads += [threading.Thread(target=upload_protocol, args=(i, date, types[i], ))]
     # start threads
