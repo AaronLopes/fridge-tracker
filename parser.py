@@ -133,7 +133,7 @@ class Parser:
             if i in missing_ch:
                 #print('adding placeholders for missing CH' + str(i + 1) + '...')
                 for k in upload_struct.keys():
-                    upload_struct[k] += ['N/A']
+                    upload_struct[k] += ['']
             else:
                 #print('accessing CH' + str(i + 1))
                 for j in range(len(date_val_ch[i])):

@@ -38,7 +38,8 @@ def upload_protocol(sheet_no, data_struct):
         data = [d, t]
         data += val
         try:
-            sheet.insert_row(data, 2)
+
+            sheet.insert_row(data, 2, value_input_option='USER_ENTERED')
         except gspread.exceptions as e:
             print('Exception: ' + str(e))
             return False
