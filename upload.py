@@ -20,30 +20,30 @@ creds = ServiceAccountCredentials.from_json_keyfile_name('creds.json', scope)
 
 def upload_protocol(sheet_no, data_struct):
     """
-
+    thread function which parses through data dictionary of datetime-value pairs and uploads 
+    values to Google Sheets
     :param sheet_no: sheet object corresponding to ustruct data (T, P, R, etc.)
     :param date: the current date to parse data
     :param type: the data type to parse (i.e. T = temperature, etc.)
     :return: boolean
     """
-
+    global num_uploads
     client = gspread.authorize(creds)
     sheet = client.open('Fridge Data Testing').get_worksheet(sheet_no)
     
     print('uploading...')
     for key, val in data_struct.items():
-        time.sleep(3)
+        time.sleep(7)
         d = key.strftime('%m/%d/%y')
         t = key.strftime('%H:%M:%S')
         data = [d, t]
         data += val
         try:
-
             sheet.insert_row(data, 2, value_input_option='USER_ENTERED')
         except gspread.exceptions as e:
             print('Exception: ' + str(e))
             return False
-    print('upload complete')
+    print('upload number ' + num_uploads + ' completed')
     return True
 
 def main():
@@ -51,10 +51,9 @@ def main():
     # maxigague contains all info for pressue values
     #date = datetime.now().strftime('%y-%m-%d')
     date = '17-02-28'
-    # type param should be of format ' X '
     upload_threads = []
     p = Parser(date)
-    data_structs = [p.temperature, p.pressue]
+    data_structs = [p.temperature, p.pressue, p.flow]
     
     # add thread processes to thread list
 

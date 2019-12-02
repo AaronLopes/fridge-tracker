@@ -9,6 +9,9 @@ google.charts.setOnLoadCallback(drawTempChart);
 // Draw line chart to display pressure data when Charts is loaded.
 google.charts.setOnLoadCallback(drawPresChart);
 
+// Draw line chart to display pressure data when Charts is loaded.
+google.charts.setOnLoadCallback(drawFlowChart);
+
 // Callback that draws the line chart for temperature data 
 function drawTempChart() {
 
@@ -28,7 +31,7 @@ function handleTempDataResponse(response) {
   var data = response.getDataTable();
   var options = {
       chart: {
-        title: 'BlueFors Temperature',
+        title: 'Temperature',
       },
       curveType: 'function',
       width: 700,
@@ -63,17 +66,51 @@ function handlePresDataResponse(response) {
   var data = response.getDataTable();
   var options = {
       chart: {
-        title: 'BlueFors Pressure',
+        title: 'Pressure',
       },
       curveType: 'function',
       width: 700,
       height: 400,
       vAxes: {
           // Adds titles to each axis.
-          0: {title: 'Pressure (Atmosphere)'}
+          0: {title: 'Pressure (kPA)'}
       }
     };
   //console.log(data)
   var chart = new google.charts.Line(document.getElementById('pres_chart_div'));
+  chart.draw(data, google.charts.Line.convertOptions(options));
+}
+
+// Callback that draws the line chart for temperature data 
+function drawFlowChart() {
+
+  // Query temp data from sheet
+  var query = new google.visualization.Query(
+          'https://docs.google.com/spreadsheets/d/1NGcHLuAWhcbnHtlnTRmzgdGae_5xIRjQ53uHW-hefhE/edit?usp=sharing&sheet=Flowmeter');
+  query.setQuery('select B, C limit 20')
+  query.send(handleFlowDataResponse);
+}
+
+function handleFlowDataResponse(response) {
+  if (response.isError()) {
+    alert('Error in query: ' + response.getMessage() + ' ' + response.getDetailedMessage());
+    return;
+  }
+
+  var data = response.getDataTable();
+  var options = {
+      chart: {
+        title: 'Flowmeter',
+      },
+      curveType: 'function',
+      width: 700,
+      height: 400,
+      vAxes: {
+          // whatever flow is measured in (?)
+          0: {title: 'Q (m^3/s)'}
+      }
+    };
+  //console.log(data)
+  var chart = new google.charts.Line(document.getElementById('flow_chart_div'));
   chart.draw(data, google.charts.Line.convertOptions(options));
 }

@@ -10,15 +10,39 @@ class Parser:
         self.date = dt
         self.temperature = self.parse_temp(dt)
         self.pressue = self.parse_pres(dt)
+        self.flow = self.parse_flow(dt)
+
+    def parse_flow(self, date):
+        flow_struct = {}
+        try:
+            data = np.loadtxt('./blue_fors_logs/' + date + '/Flowmeter ' + date +'.log', dtype=str, delimiter=',')
+            n = len(data)
+            for j in range(n):
+                year = int(data[j][0][7:9]) + 2000
+                month = int(data[j][0][4:6])
+                day = int(data[j][0][1:3])
+                hour = int(data[j][1][0:2])
+                minute = int(data[j][1][3:5])
+                second = int(data[j][1][6:8])
+                dt = datetime(year, month, day, hour, minute, second)
+                #interval = datetime.now() - timedelta(minutes=10)
+                interval = datetime(17, 2, 28, 23, 49, 22)
+                if dt >= interval:
+                    flow_struct[dt] = [data[j][2]]
+        except Exception as e:
+                print('Exception: ' + str(e))
+                print('Flowmeter file missing on ' + date)
+
+        return flow_struct
 
     def parse_temp(self, date):
         """
-        Parses values over given interval. Creates datetime array, values array, and identifies
-        channels missing data.
+        Parses T (temperature, interchangeable with R/P) files and returns temperature values 
+        for channels 1 - 6
         :param date: date in format 'yy-mm-dd' corresponding to log folders
         :param data_type: the file type of values to be parsed (T, K, P, etc.), should be in format ' X '
         :return: datetime objects corresponding to values parsed, values, and missing channels
-        :rtype: lists
+        :rtype: List
         """
         datetimes = [[], [], [], [], [], []]
         values = [[], [], [], [], [], []]
@@ -51,7 +75,7 @@ class Parser:
 
     def parse_pres(self, date):
         """
-        Parses maxigauge files and returns channels 
+        Parses maxigauge files and returns pressure values for channels 1-6
         :param date: date in format 'yy-mm-dd' corresponding to log folders
         :param data_type: the file type of values to be parsed (T, K, P, etc.), should be in format ' X '
         :return: datetime objects corresponding to values parsed, values, and missing channels
@@ -106,14 +130,6 @@ class Parser:
                     vls[i][j] = values[i][j - 1]
 
         flat_datetimes = sorted(list(set(itertools.chain(*datetimes))))
-        """
-            upload_struct = {
-                datetime.datetime(0,0,0,0,0,0) = [CH1 T, CH2 T, ..., CH6 T]
-                .
-                .
-                datetime.datetime(0,0,0,0,0,0) = [CH1 T, CH2 T, ..., CH6 T]
-            } 
-        """
 
         for i in range(6):
             if i not in missing_ch:
