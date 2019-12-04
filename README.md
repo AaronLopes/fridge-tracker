@@ -1,2 +1,2 @@
 # fridge-tracker
-Handlers for parsing and uploading BlueFors fridge data (temperature, pressure, flow); Chen Wang Lab @ UMass Amherst
+Data can be viewed at: https://aaronlopes.github.io/fridge-tracker/
