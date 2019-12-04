@@ -24,7 +24,7 @@ function drawTempChart() {
   // Query temp data from sheet
   var query = new google.visualization.Query(
           'https://docs.google.com/spreadsheets/d/1BXX9xQkytohHl4pVvSzlY9WEamZoQv_-gYBZbVp667s/edit?usp=sharing&sheet=Temperature');
-  query.setQuery('select B, C, D, E, G, H limit 20')
+  query.setQuery('select B, C, D, F, G, H limit 40')
   query.send(handleTempDataResponse);
 }
 
@@ -48,7 +48,8 @@ function handleTempDataResponse(response) {
       vAxis: {
           scaleType: 'log',
           title: 'Temperature (K)'
-      }
+      },
+      explorer: {axis: 'horizontal', keepInBounds: true}
     };
   //console.log(data)
   var chart = new google.visualization.LineChart(document.getElementById('temp_chart_div'));
@@ -62,7 +63,7 @@ function drawPresChart() {
   // Query temp data from sheet
   var query = new google.visualization.Query(
           'https://docs.google.com/spreadsheets/d/1BXX9xQkytohHl4pVvSzlY9WEamZoQv_-gYBZbVp667s/edit?usp=sharing&sheet=Pressure');
-  query.setQuery('select B, C, D, E, F, G, H limit 20')
+  query.setQuery('select B, C, D, E, F, G, H limit 40')
   query.send(handlePresDataResponse);
 }
 
@@ -84,7 +85,8 @@ function handlePresDataResponse(response) {
       vAxis: {
           scaleType: 'log',
           title: 'Pressure (mBar)'
-      }
+      },
+      explorer: {axis: 'horizontal', keepInBounds: true}
     };
   //console.log(data)
   var chart = new google.visualization.LineChart(document.getElementById('pres_chart_div'));
@@ -97,7 +99,7 @@ function drawFlowChart() {
   // Query temp data from sheet
   var query = new google.visualization.Query(
           'https://docs.google.com/spreadsheets/d/1BXX9xQkytohHl4pVvSzlY9WEamZoQv_-gYBZbVp667s/edit?usp=sharing&sheet=Flowmeter');
-  query.setQuery('select B, C limit 20')
+  query.setQuery('select B, C limit 40')
   query.send(handleFlowDataResponse);
 }
 
@@ -118,8 +120,9 @@ function handleFlowDataResponse(response) {
       },
       vAxis: {
           scaleType: 'mirrorLog',
-          title: 'Pressure (mBar)'
-      }
+          title: 'Flow mmol/s'
+      },
+      explorer: {axis: 'horizontal', keepInBounds: true}
     };
   //console.log(data)
   var chart = new google.visualization.LineChart(document.getElementById('flow_chart_div'));
