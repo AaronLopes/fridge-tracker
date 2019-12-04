@@ -2,13 +2,6 @@
 google.charts.load('current', {'packages':['corechart']});
 google.charts.load('current', {'packages':['line']});
 
-// Get current date for chart titles 
-var today = new Date()
-var d = String(today.getDate()).padStart(2, '0');
-var m = String(today.getMonth() + 1).padStart(2, '0'); //January is 0!
-var y = today.getFullYear();
-
-
 // Draw line chart to display temperature data when Charts is loaded.
 google.charts.setOnLoadCallback(drawTempChart);
 
@@ -38,7 +31,7 @@ function handleTempDataResponse(response) {
   
 
   var options = {
-      title: 'Temperature Data for ' + m + '-' + d + '-' + y,
+      title: 'Temperature Data',
       curveType: 'function',
       width: 900,
       height: 400,
@@ -49,7 +42,7 @@ function handleTempDataResponse(response) {
           scaleType: 'log',
           title: 'Temperature (K)'
       },
-      explorer: {axis: 'horizontal', keepInBounds: true}
+      explorer: {keepInBounds: true}
     };
   //console.log(data)
   var chart = new google.visualization.LineChart(document.getElementById('temp_chart_div'));
@@ -75,7 +68,7 @@ function handlePresDataResponse(response) {
 
   var data = response.getDataTable();
   var options = {
-      title: 'Pressure Data for ' + m + '-' + d + '-' + y,
+      title: 'Pressure Data',
       curveType: 'function',
       width: 900,
       height: 400,
@@ -86,7 +79,7 @@ function handlePresDataResponse(response) {
           scaleType: 'log',
           title: 'Pressure (mBar)'
       },
-      explorer: {axis: 'horizontal', keepInBounds: true}
+      explorer: {keepInBounds: true}
     };
   //console.log(data)
   var chart = new google.visualization.LineChart(document.getElementById('pres_chart_div'));
@@ -111,7 +104,7 @@ function handleFlowDataResponse(response) {
 
   var data = response.getDataTable();
   var options = {
-      title: 'Flowmeter Data for ' + m + '-' + d + '-' + y,
+      title: 'Flowmeter Data',
       curveType: 'function',
       width: 900,
       height: 400,
@@ -119,10 +112,9 @@ function handleFlowDataResponse(response) {
         title: 'Time (EST)'
       },
       vAxis: {
-          scaleType: 'mirrorLog',
-          title: 'Flow mmol/s'
+          title: 'Flow (mmol/s)'
       },
-      explorer: {axis: 'horizontal', keepInBounds: true}
+      explorer: {keepInBounds: true}
     };
   //console.log(data)
   var chart = new google.visualization.LineChart(document.getElementById('flow_chart_div'));

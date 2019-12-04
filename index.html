@@ -14,7 +14,14 @@
     <!--Table and divs that hold the line charts-->
     <!--JavaScript at end of body for optimized loading-->
     <script type="text/javascript" src="js/materialize.min.js"></script>
-    <h5 class="center">BlueFors Fridge Data</h5>
+    <h5 class="center">BlueFors Fridge Data: <p id="date"></p></h5>
+    <<script>
+      var today = new Date()
+      var d = String(today.getDate()).padStart(2, '0');
+      var m = String(today.getMonth() + 1).padStart(2, '0'); //January is 0!
+      var y = today.getFullYear();
+      document.getElementById("date").innerHTML = m + '-' + d + '-' + y;
+    </script>
     <div class="container">      
       <div class="row">
         <td><div id="temp_chart_div" style="border: 1px solid #ccc"></div></td>
