@@ -2,6 +2,12 @@
 google.charts.load('current', {'packages':['corechart']});
 google.charts.load('current', {'packages':['line']});
 
+// Get current date for chart titles 
+var today = new Date()
+var d = String(today.getDate()).padStart(2, '0');
+var m = String(today.getMonth() + 1).padStart(2, '0'); //January is 0!
+var y = today.getFullYear();
+
 
 // Draw line chart to display temperature data when Charts is loaded.
 google.charts.setOnLoadCallback(drawTempChart);
@@ -18,7 +24,7 @@ function drawTempChart() {
   // Query temp data from sheet
   var query = new google.visualization.Query(
           'https://docs.google.com/spreadsheets/d/1NGcHLuAWhcbnHtlnTRmzgdGae_5xIRjQ53uHW-hefhE/edit?usp=sharing&sheet=Temperature');
-  query.setQuery('select B, C, D, E, F, G limit 20')
+  query.setQuery('select B, C, D, E, G, H limit 20')
   query.send(handleTempDataResponse);
 }
 
@@ -29,21 +35,24 @@ function handleTempDataResponse(response) {
   }
 
   var data = response.getDataTable();
+  
+
   var options = {
-      chart: {
-        title: 'Temperature',
-      },
+      title: 'Temperature Data for ' + m + '-' + d + '-' + y,
       curveType: 'function',
-      width: 700,
+      width: 900,
       height: 400,
-      vAxes: {
-          // Adds titles to each axis.
-          0: {title: 'Temperature (Kelvin)'}
+      hAxis: {
+        title: 'Time (EST)'
+      },
+      vAxis: {
+          scaleType: 'log',
+          title: 'Temperature (K)'
       }
     };
   //console.log(data)
-  var chart = new google.charts.Line(document.getElementById('temp_chart_div'));
-  chart.draw(data, google.charts.Line.convertOptions(options));
+  var chart = new google.visualization.LineChart(document.getElementById('temp_chart_div'));
+  chart.draw(data, options);
 }
 
 
@@ -53,7 +62,7 @@ function drawPresChart() {
   // Query temp data from sheet
   var query = new google.visualization.Query(
           'https://docs.google.com/spreadsheets/d/1NGcHLuAWhcbnHtlnTRmzgdGae_5xIRjQ53uHW-hefhE/edit?usp=sharing&sheet=Pressure');
-  query.setQuery('select B, C, D, E, F, G limit 20')
+  query.setQuery('select B, C, D, E, F, G, H limit 20')
   query.send(handlePresDataResponse);
 }
 
@@ -65,20 +74,21 @@ function handlePresDataResponse(response) {
 
   var data = response.getDataTable();
   var options = {
-      chart: {
-        title: 'Pressure',
-      },
+      title: 'Pressure Data for ' + m + '-' + d + '-' + y,
       curveType: 'function',
-      width: 700,
+      width: 900,
       height: 400,
-      vAxes: {
-          // Adds titles to each axis.
-          0: {title: 'Pressure (kPA)'}
+      hAxis: {
+        title: 'Time (EST)'
+      },
+      vAxis: {
+          scaleType: 'log',
+          title: 'Pressure (mBar)'
       }
     };
   //console.log(data)
-  var chart = new google.charts.Line(document.getElementById('pres_chart_div'));
-  chart.draw(data, google.charts.Line.convertOptions(options));
+  var chart = new google.visualization.LineChart(document.getElementById('pres_chart_div'));
+  chart.draw(data, options);
 }
 
 // Callback that draws the line chart for temperature data 
@@ -99,18 +109,19 @@ function handleFlowDataResponse(response) {
 
   var data = response.getDataTable();
   var options = {
-      chart: {
-        title: 'Flowmeter',
-      },
+      title: 'Flowmeter Data for ' + m + '-' + d + '-' + y,
       curveType: 'function',
-      width: 700,
+      width: 900,
       height: 400,
-      vAxes: {
-          // whatever flow is measured in (?)
-          0: {title: 'Q (m^3/s)'}
+      hAxis: {
+        title: 'Time (EST)'
+      },
+      vAxis: {
+          scaleType: 'mirrorLog',
+          title: 'Pressure (mBar)'
       }
     };
   //console.log(data)
-  var chart = new google.charts.Line(document.getElementById('flow_chart_div'));
+  var chart = new google.visualization.LineChart(document.getElementById('flow_chart_div'));
   chart.draw(data, google.charts.Line.convertOptions(options));
 }
