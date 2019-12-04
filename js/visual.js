@@ -17,7 +17,7 @@ function drawTempChart() {
   // Query temp data from sheet
   var query = new google.visualization.Query(
           'https://docs.google.com/spreadsheets/d/1BXX9xQkytohHl4pVvSzlY9WEamZoQv_-gYBZbVp667s/edit?usp=sharing&sheet=Temperature');
-  query.setQuery('select B, C, D, F, G, H limit 40')
+  query.setQuery('select B, C, D, F, G, H limit 500')
   query.send(handleTempDataResponse);
 }
 
@@ -56,7 +56,7 @@ function drawPresChart() {
   // Query temp data from sheet
   var query = new google.visualization.Query(
           'https://docs.google.com/spreadsheets/d/1BXX9xQkytohHl4pVvSzlY9WEamZoQv_-gYBZbVp667s/edit?usp=sharing&sheet=Pressure');
-  query.setQuery('select B, C, D, E, F, G, H limit 40')
+  query.setQuery('select B, C, D, E, F, G, H limit 500')
   query.send(handlePresDataResponse);
 }
 
@@ -92,7 +92,7 @@ function drawFlowChart() {
   // Query temp data from sheet
   var query = new google.visualization.Query(
           'https://docs.google.com/spreadsheets/d/1BXX9xQkytohHl4pVvSzlY9WEamZoQv_-gYBZbVp667s/edit?usp=sharing&sheet=Flowmeter');
-  query.setQuery('select B, C limit 40')
+  query.setQuery('select B, C limit 500')
   query.send(handleFlowDataResponse);
 }
 
