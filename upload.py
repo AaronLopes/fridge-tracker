@@ -5,7 +5,7 @@ import time
 
 from datetime import datetime
 from oauth2client.service_account import ServiceAccountCredentials
-from parser import Parser
+from reader import Reader
 
 
 num_uploads = 0
@@ -34,9 +34,9 @@ def upload_protocol(sheet_no, data_struct):
     print('uploading...')
     for key, val in data_struct.items():
         time.sleep(7)
-        d = key.strftime('%m/%d/%y')
+        d = key.strftime('%m/%d/%Y ')
         t = key.strftime('%H:%M:%S')
-        data = [d, t]
+        data = [d + t]
         data += val
         try:
             sheet.insert_row(data, 2, value_input_option='USER_ENTERED')
@@ -52,17 +52,15 @@ def main():
     #date = datetime.now().strftime('%y-%m-%d')
     date = '17-02-28'
     upload_threads = []
-    p = Parser(date)
+    p = Reader(date)
     data_structs = [p.temperature, p.pressue, p.flow]
-    
     # add thread processes to thread list
-
     for i in range(len(data_structs)):
         upload_threads += [threading.Thread(target=upload_protocol, args=(i, data_structs[i], ))]
     # start threads
     for i in range(len(upload_threads)):
         upload_threads[i].start()
-
+    num_uploads += 1
     # join threads
     for i in range(len(upload_threads)):
         upload_threads[i].join()

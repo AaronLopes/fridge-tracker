@@ -17,7 +17,7 @@ function drawTempChart() {
   // Query temp data from sheet
   var query = new google.visualization.Query(
           'https://docs.google.com/spreadsheets/d/1BXX9xQkytohHl4pVvSzlY9WEamZoQv_-gYBZbVp667s/edit?usp=sharing&sheet=Temperature');
-  query.setQuery('select B, C, D, F, G, H limit 500')
+  query.setQuery('SELECT B, C, D, F, G, H WHERE B > timeofday "00:00:00" LIMIT 1500')
   query.send(handleTempDataResponse);
 }
 
@@ -36,13 +36,14 @@ function handleTempDataResponse(response) {
       width: 900,
       height: 400,
       hAxis: {
+        format: 'h:mm',
         title: 'Time (EST)'
       },
       vAxis: {
           scaleType: 'log',
           title: 'Temperature (K)'
       },
-      explorer: {keepInBounds: true}
+      explorer: {axis: 'horizontal', keepInBounds: true}
     };
   //console.log(data)
   var chart = new google.visualization.LineChart(document.getElementById('temp_chart_div'));
@@ -56,7 +57,7 @@ function drawPresChart() {
   // Query temp data from sheet
   var query = new google.visualization.Query(
           'https://docs.google.com/spreadsheets/d/1BXX9xQkytohHl4pVvSzlY9WEamZoQv_-gYBZbVp667s/edit?usp=sharing&sheet=Pressure');
-  query.setQuery('select B, C, D, E, F, G, H limit 500')
+  query.setQuery('SELECT B, C, D, E, F, G, H WHERE B > timeofday "00:00:00" LIMIT 1500')
   query.send(handlePresDataResponse);
 }
 
@@ -73,13 +74,14 @@ function handlePresDataResponse(response) {
       width: 900,
       height: 400,
       hAxis: {
+        format: 'h:mm',
         title: 'Time (EST)'
       },
       vAxis: {
           scaleType: 'log',
           title: 'Pressure (mBar)'
       },
-      explorer: {keepInBounds: true}
+      explorer: {axis: 'horizontal', keepInBounds: true}
     };
   //console.log(data)
   var chart = new google.visualization.LineChart(document.getElementById('pres_chart_div'));
@@ -92,7 +94,14 @@ function drawFlowChart() {
   // Query temp data from sheet
   var query = new google.visualization.Query(
           'https://docs.google.com/spreadsheets/d/1BXX9xQkytohHl4pVvSzlY9WEamZoQv_-gYBZbVp667s/edit?usp=sharing&sheet=Flowmeter');
-  query.setQuery('select B, C limit 500')
+  var today = new Date();
+  var d = String(today.getDate()).padStart(2, '0');
+  var m = String(today.getMonth() + 1).padStart(2, '0'); //January is 0!
+  var y = today.getFullYear();
+  var t = y + '-' + m + '-' + d; 
+  console.log(t)
+  var q = 'SELECT B, C WHERE B > timeofday "2:00:00" LIMIT 300';
+  query.setQuery(q)
   query.send(handleFlowDataResponse);
 }
 
@@ -109,12 +118,13 @@ function handleFlowDataResponse(response) {
       width: 900,
       height: 400,
       hAxis: {
+        format: 'h:mm',
         title: 'Time (EST)'
       },
       vAxis: {
           title: 'Flow (mmol/s)'
       },
-      explorer: {keepInBounds: true}
+      explorer: {axis: 'horizontal', keepInBounds: true}
     };
   //console.log(data)
   var chart = new google.visualization.LineChart(document.getElementById('flow_chart_div'));

@@ -4,7 +4,7 @@ import numpy as np
 
 from datetime import datetime, timedelta
 
-class Parser:
+class Reader:
 
     def __init__(self, dt):
         self.date = dt
@@ -13,6 +13,11 @@ class Parser:
         self.flow = self.parse_flow(dt)
 
     def parse_flow(self, date):
+        """
+        Parses Flowmeter file 
+        :param date:
+        :return:
+        """
         flow_struct = {}
         try:
             data = np.loadtxt('./blue_fors_logs/' + date + '/Flowmeter ' + date +'.log', dtype=str, delimiter=',')
@@ -40,7 +45,6 @@ class Parser:
         Parses T (temperature, interchangeable with R/P) files and returns temperature values 
         for channels 1 - 6
         :param date: date in format 'yy-mm-dd' corresponding to log folders
-        :param data_type: the file type of values to be parsed (T, K, P, etc.), should be in format ' X '
         :return: datetime objects corresponding to values parsed, values, and missing channels
         :rtype: List
         """
@@ -136,14 +140,8 @@ class Parser:
                 date_val = np.array([datetimes[i], values[i]])
                 date_val = date_val.transpose()
                 date_val_ch[i] = date_val
-        """ 
-        print('dimensions: ')
-        print(len(missing_ch))
-        if len(date_val_ch) != 0:
-            print(len(date_val_ch), len(date_val_ch[0]), len(date_val_ch[0][0]))
-        else:
-            print('no available data')
-        """
+
+        # create upload struct, put in '' for unavailable data
         upload_struct = dict((i, []) for i in flat_datetimes)
         for i in range(len(date_val_ch)):
             if i in missing_ch:
