@@ -54,6 +54,7 @@ def main():
     upload_threads = []
     p = Reader(date)
     data_structs = [p.temperature, p.pressue, p.flow]
+    pprint(data_structs[0])
     # add thread processes to thread list
     for i in range(len(data_structs)):
         upload_threads += [threading.Thread(target=upload_protocol, args=(i, data_structs[i], ))]
@@ -64,7 +65,7 @@ def main():
     # join threads
     for i in range(len(upload_threads)):
         upload_threads[i].join()
-
+        
 main()
 # comment out scheduling block for testing
 """

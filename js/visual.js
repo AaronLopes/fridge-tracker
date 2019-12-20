@@ -17,7 +17,7 @@ function drawTempChart() {
   // Query temp data from sheet
   var query = new google.visualization.Query(
           'https://docs.google.com/spreadsheets/d/1BXX9xQkytohHl4pVvSzlY9WEamZoQv_-gYBZbVp667s/edit?usp=sharing&sheet=Temperature');
-  query.setQuery('SELECT B, C, D, F, G, H WHERE B > timeofday "00:00:00" LIMIT 1500')
+  query.setQuery('SELECT B, C, D, F, G, H WHERE B > timeofday "00:00:00" LIMIT 950')
   query.send(handleTempDataResponse);
 }
 
@@ -57,7 +57,7 @@ function drawPresChart() {
   // Query temp data from sheet
   var query = new google.visualization.Query(
           'https://docs.google.com/spreadsheets/d/1BXX9xQkytohHl4pVvSzlY9WEamZoQv_-gYBZbVp667s/edit?usp=sharing&sheet=Pressure');
-  query.setQuery('SELECT B, C, D, E, F, G, H WHERE B > timeofday "00:00:00" LIMIT 1500')
+  query.setQuery('SELECT B, C, D, E, F, G, H WHERE B > timeofday "00:00:00" LIMIT 900')
   query.send(handlePresDataResponse);
 }
 
@@ -124,7 +124,7 @@ function handleFlowDataResponse(response) {
       vAxis: {
           title: 'Flow (mmol/s)'
       },
-      explorer: {axis: 'horizontal', keepInBounds: true}
+      explorer: {keepInBounds: true}
     };
   //console.log(data)
   var chart = new google.visualization.LineChart(document.getElementById('flow_chart_div'));
